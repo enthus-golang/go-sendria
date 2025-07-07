@@ -209,6 +209,42 @@ func testEmailWithHTML(t *testing.T, client *sendria.Client, smtpHost string) {
 	if plain != plainBody {
 		t.Errorf("Plain text content mismatch.\nExpected: %q\nGot: %q", plainBody, plain)
 	}
+
+	// Verify parts were parsed correctly
+	fullMsg, err := client.GetMessage(msgID)
+	if err != nil {
+		t.Fatalf("Failed to get full message: %v", err)
+	}
+
+	// Should have at least 2 parts (plain and HTML)
+	if len(fullMsg.Parts) < 2 {
+		t.Errorf("Expected at least 2 parts, got %d", len(fullMsg.Parts))
+	}
+
+	// Check if we have both text/plain and text/html parts
+	hasPlain := false
+	hasHTML := false
+	for _, part := range fullMsg.Parts {
+		if part.Type == "text/plain" {
+			hasPlain = true
+			if !strings.Contains(part.Body, "This is the plain text version") {
+				t.Errorf("Plain text part doesn't contain expected content")
+			}
+		}
+		if part.Type == "text/html" {
+			hasHTML = true
+			if !strings.Contains(part.Body, "<h1>Test Email</h1>") {
+				t.Errorf("HTML part doesn't contain expected content")
+			}
+		}
+	}
+
+	if !hasPlain {
+		t.Error("No text/plain part found")
+	}
+	if !hasHTML {
+		t.Error("No text/html part found")
+	}
 }
 
 func testEmailWithMultipleRecipients(t *testing.T, client *sendria.Client, smtpHost string) {
@@ -321,6 +357,7 @@ func testEmailWithAttachment(t *testing.T, client *sendria.Client, smtpHost stri
 		"--%s\r\n"+
 		"Content-Type: text/plain; name=\"%s\"\r\n"+
 		"Content-Disposition: attachment; filename=\"%s\"\r\n"+
+		"Content-ID: <attachment123>\r\n"+
 		"Content-Transfer-Encoding: 7bit\r\n"+
 		"\r\n"+
 		"%s\r\n"+
@@ -346,7 +383,7 @@ func testEmailWithAttachment(t *testing.T, client *sendria.Client, smtpHost stri
 
 	// Verify attachment exists
 	if len(fullMsg.Attachments) == 0 {
-		t.Skip("No attachments found - Sendria might not have parsed them")
+		t.Fatal("No attachments found - expected at least one attachment")
 	}
 
 	// Find our attachment
