@@ -160,6 +160,16 @@ func (c *Client) ListMessages(page, perPage int) (*models.MessageList, error) {
 			Type:      apiMsg.Type,
 			Source:    apiMsg.Source,
 		}
+
+		// Parse MIME message to extract parts and attachments
+		if apiMsg.Source != "" {
+			parts, attachments, err := parseMIMEMessage(apiMsg.Source)
+			if err != nil {
+				return nil, fmt.Errorf("parsing MIME message for ID %d: %w", apiMsg.ID, err)
+			}
+			messages[i].Parts = parts
+			messages[i].Attachments = attachments
+		}
 	}
 
 	// Create message list
@@ -229,6 +239,16 @@ func (c *Client) GetMessage(id string) (*models.Message, error) {
 		Size:      apiMsg.Size,
 		Type:      apiMsg.Type,
 		Source:    apiMsg.Source,
+	}
+
+	// Parse MIME message to extract parts and attachments
+	if apiMsg.Source != "" {
+		parts, attachments, err := parseMIMEMessage(apiMsg.Source)
+		if err != nil {
+			return nil, fmt.Errorf("parsing MIME message: %w", err)
+		}
+		message.Parts = parts
+		message.Attachments = attachments
 	}
 
 	return message, nil
