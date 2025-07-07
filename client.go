@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/enthus-golang/go-sendria/internal/models"
+	"github.com/enthus-golang/go-sendria/models"
 )
 
 // Client represents a Sendria API client
@@ -20,13 +20,6 @@ type Client struct {
 	password   string
 }
 
-// Config holds the configuration for the Sendria client
-type Config struct {
-	BaseURL  string
-	Username string
-	Password string
-	Timeout  time.Duration
-}
 
 // Option is a functional option for configuring the Client
 type Option func(*Client)
@@ -67,25 +60,6 @@ func NewClient(baseURL string, opts ...Option) *Client {
 	return client
 }
 
-// NewClientFromConfig creates a new Sendria API client from a Config struct (deprecated)
-// Deprecated: Use NewClient with functional options instead
-func NewClientFromConfig(config Config) *Client {
-	if config.BaseURL == "" {
-		config.BaseURL = "http://localhost:1025"
-	}
-	if config.Timeout == 0 {
-		config.Timeout = 30 * time.Second
-	}
-
-	return &Client{
-		baseURL: config.BaseURL,
-		httpClient: &http.Client{
-			Timeout: config.Timeout,
-		},
-		username: config.Username,
-		password: config.Password,
-	}
-}
 
 // doRequest performs an HTTP request with optional basic auth
 func (c *Client) doRequest(method, path string, body io.Reader) (*http.Response, error) {

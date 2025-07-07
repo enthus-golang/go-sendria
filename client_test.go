@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/enthus-golang/go-sendria/internal/models"
+	"github.com/enthus-golang/go-sendria/models"
 )
 
 func TestNewClient(t *testing.T) {
@@ -124,29 +124,6 @@ func TestNewClient(t *testing.T) {
 	}
 }
 
-func TestNewClientFromConfig(t *testing.T) {
-	config := Config{
-		BaseURL:  "http://sendria.example.com:8025",
-		Username: "user",
-		Password: "pass",
-		Timeout:  60 * time.Second,
-	}
-	
-	client := NewClientFromConfig(config)
-	
-	if client.baseURL != config.BaseURL {
-		t.Errorf("expected baseURL %s, got %s", config.BaseURL, client.baseURL)
-	}
-	if client.httpClient.Timeout != config.Timeout {
-		t.Errorf("expected timeout %v, got %v", config.Timeout, client.httpClient.Timeout)
-	}
-	if client.username != config.Username {
-		t.Errorf("expected username %s, got %s", config.Username, client.username)
-	}
-	if client.password != config.Password {
-		t.Errorf("expected password %s, got %s", config.Password, client.password)
-	}
-}
 
 func TestListMessages(t *testing.T) {
 	expectedMessages := models.MessageList{

@@ -75,13 +75,6 @@ client := sendria.NewClient("http://sendria.example.com:8025",
     sendria.WithBasicAuth("admin", "secret"),
     sendria.WithTimeout(60 * time.Second))
 
-// Legacy configuration (deprecated)
-client := sendria.NewClientFromConfig(sendria.Config{
-    BaseURL:  "http://sendria.example.com:8025",
-    Username: "admin",
-    Password: "secret",
-    Timeout:  60 * time.Second,
-})
 ```
 
 ## API Reference
@@ -90,9 +83,6 @@ client := sendria.NewClientFromConfig(sendria.Config{
 
 #### NewClient(baseURL string, opts ...Option) *Client
 Creates a new Sendria API client with the specified base URL and options. If baseURL is empty, defaults to "http://localhost:1025".
-
-#### NewClientFromConfig(config Config) *Client
-(Deprecated) Creates a new Sendria API client from a Config struct. Use NewClient with functional options instead.
 
 #### ListMessages(page, perPage int) (*MessageList, error)
 Retrieves a paginated list of messages.
