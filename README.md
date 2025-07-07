@@ -219,7 +219,7 @@ import (
 
 func TestEmailSending(t *testing.T) {
     // Create Sendria client
-    client := sendria.NewClient(sendria.Config{})
+    client := sendria.NewClient("")
     
     // Clear all messages before test
     client.DeleteAllMessages()
@@ -376,13 +376,26 @@ The examples directory contains several demonstration programs. Build them indiv
 
 ```bash
 # Basic usage example
-go build -o basic_usage ./examples/basic_usage.go
+go build -o basic ./examples/basic/
 
 # Integration test example
-go build -o integration_test ./examples/integration_test.go
+go build -o integration ./examples/integration/
 
 # Email monitor example
-go build -o monitor_emails ./examples/monitor_emails.go
+go build -o monitor ./examples/monitor/
+```
+
+## Examples
+
+Complete working examples are available in the `examples/` directory:
+
+- **[basic/](examples/basic/)** - Simple example showing how to list and read messages
+- **[integration/](examples/integration/)** - Integration test example with SMTP sending
+- **[monitor/](examples/monitor/)** - Real-time email monitoring example
+
+To run an example:
+```bash
+go run examples/basic/main.go
 ```
 
 ## Contributing
