@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/smtp"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -65,6 +66,9 @@ func TestSendriaIntegration(t *testing.T) {
 
 func testBasicEmailSend(t *testing.T, client *sendria.Client, smtpHost string) {
 	t.Helper()
+	// Small delay to avoid connection issues
+	time.Sleep(100 * time.Millisecond)
+	
 	// Clear messages
 	if err := client.DeleteAllMessages(); err != nil {
 		t.Fatalf("Failed to clear messages: %v", err)
@@ -133,6 +137,9 @@ func testBasicEmailSend(t *testing.T, client *sendria.Client, smtpHost string) {
 
 func testEmailWithHTML(t *testing.T, client *sendria.Client, smtpHost string) {
 	t.Helper()
+	// Small delay to avoid connection issues
+	time.Sleep(100 * time.Millisecond)
+	
 	// Clear messages
 	if err := client.DeleteAllMessages(); err != nil {
 		t.Fatalf("Failed to clear messages: %v", err)
@@ -183,8 +190,10 @@ func testEmailWithHTML(t *testing.T, client *sendria.Client, smtpHost string) {
 		t.Fatalf("Failed to get HTML: %v", err)
 	}
 
-	if html != htmlBody {
-		t.Errorf("HTML content mismatch.\nExpected: %q\nGot: %q", htmlBody, html)
+	// Sendria may modify HTML by adding missing tags like <head></head>
+	// So we check if our content is contained within the response
+	if !strings.Contains(html, "<h1>Test Email</h1>") || !strings.Contains(html, "<p>This is the <b>HTML</b> version.</p>") {
+		t.Errorf("HTML content mismatch.\nExpected to contain: %q\nGot: %q", htmlBody, html)
 	}
 
 	// Get plain text content
@@ -200,6 +209,9 @@ func testEmailWithHTML(t *testing.T, client *sendria.Client, smtpHost string) {
 
 func testEmailWithMultipleRecipients(t *testing.T, client *sendria.Client, smtpHost string) {
 	t.Helper()
+	// Small delay to avoid connection issues
+	time.Sleep(100 * time.Millisecond)
+	
 	// Clear messages
 	if err := client.DeleteAllMessages(); err != nil {
 		t.Fatalf("Failed to clear messages: %v", err)
@@ -264,6 +276,9 @@ func testEmailWithMultipleRecipients(t *testing.T, client *sendria.Client, smtpH
 
 func testEmailWithAttachment(t *testing.T, client *sendria.Client, smtpHost string) {
 	t.Helper()
+	// Small delay to avoid connection issues
+	time.Sleep(100 * time.Millisecond)
+	
 	// Clear messages
 	if err := client.DeleteAllMessages(); err != nil {
 		t.Fatalf("Failed to clear messages: %v", err)
@@ -352,6 +367,9 @@ func testEmailWithAttachment(t *testing.T, client *sendria.Client, smtpHost stri
 
 func testDeleteMessage(t *testing.T, client *sendria.Client, smtpHost string) {
 	t.Helper()
+	// Small delay to avoid connection issues
+	time.Sleep(100 * time.Millisecond)
+	
 	// Clear messages
 	if err := client.DeleteAllMessages(); err != nil {
 		t.Fatalf("Failed to clear messages: %v", err)

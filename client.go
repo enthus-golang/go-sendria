@@ -53,6 +53,11 @@ func NewClient(baseURL string, opts ...Option) *Client {
 		baseURL: baseURL,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
+			Transport: &http.Transport{
+				MaxIdleConns:        10,
+				MaxIdleConnsPerHost: 10,
+				IdleConnTimeout:     90 * time.Second,
+			},
 		},
 	}
 
@@ -351,6 +356,9 @@ func (c *Client) DeleteMessage(id string) error {
 		_ = resp.Body.Close()
 	}()
 
+	// Read and discard the response body to ensure the connection can be reused
+	_, _ = io.Copy(io.Discard, resp.Body)
+
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
@@ -369,6 +377,9 @@ func (c *Client) DeleteAllMessages() error {
 	defer func() {
 		_ = resp.Body.Close()
 	}()
+
+	// Read and discard the response body to ensure the connection can be reused
+	_, _ = io.Copy(io.Discard, resp.Body)
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
