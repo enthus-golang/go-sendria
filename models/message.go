@@ -1,7 +1,10 @@
 // Package models contains the data structures used by the Sendria API.
 package models
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // Message represents an email message in Sendria
 type Message struct {
@@ -46,4 +49,33 @@ type MessageList struct {
 	Total    int       `json:"total"`
 	Page     int       `json:"page"`
 	PerPage  int       `json:"per_page"`
+}
+
+// APIResponse represents the standard API response structure
+type APIResponse struct {
+	Code string          `json:"code"`
+	Data json.RawMessage `json:"data"`
+	Meta *APIMeta        `json:"meta,omitempty"`
+}
+
+// APIMeta represents metadata in API responses
+type APIMeta struct {
+	PagesTotal int `json:"pages_total"`
+}
+
+// APIMessage represents a message in the API response
+type APIMessage struct {
+	ID                   int       `json:"id"`
+	SenderEnvelope       string    `json:"sender_envelope"`
+	SenderMessage        string    `json:"sender_message"`
+	RecipientsEnvelope   []string  `json:"recipients_envelope"`
+	RecipientsMessageTo  []string  `json:"recipients_message_to"`
+	RecipientsMessageCC  []string  `json:"recipients_message_cc"`
+	RecipientsMessageBCC []string  `json:"recipients_message_bcc"`
+	Subject              string    `json:"subject"`
+	Source               string    `json:"source"`
+	Size                 int       `json:"size"`
+	Type                 string    `json:"type"`
+	Peer                 string    `json:"peer"`
+	CreatedAt            string    `json:"created_at"`
 }

@@ -36,6 +36,11 @@ func TestSendriaIntegration(t *testing.T) {
 		t.Fatalf("Failed to clear messages: %v", err)
 	}
 
+	// Ensure cleanup after all tests
+	t.Cleanup(func() {
+		_ = client.DeleteAllMessages()
+	})
+
 	// Run sub-tests
 	t.Run("BasicEmailSend", func(t *testing.T) {
 		testBasicEmailSend(t, client, smtpHost)
@@ -59,6 +64,7 @@ func TestSendriaIntegration(t *testing.T) {
 }
 
 func testBasicEmailSend(t *testing.T, client *sendria.Client, smtpHost string) {
+	t.Helper()
 	// Clear messages
 	if err := client.DeleteAllMessages(); err != nil {
 		t.Fatalf("Failed to clear messages: %v", err)
@@ -76,22 +82,19 @@ func testBasicEmailSend(t *testing.T, client *sendria.Client, smtpHost string) {
 		"\r\n"+
 		"%s\r\n", from, to[0], subject, body))
 
+	t.Logf("Sending email to SMTP host: %s", smtpHost)
 	if err := smtp.SendMail(smtpHost, nil, from, to, msg); err != nil {
 		t.Fatalf("Failed to send email: %v", err)
 	}
+	t.Log("Email sent successfully")
 
 	// Wait for Sendria to process the email
-	time.Sleep(500 * time.Millisecond)
-
-	// List messages
-	messages, err := client.ListMessages(1, 10)
-	if err != nil {
-		t.Fatalf("Failed to list messages: %v", err)
-	}
-
-	if len(messages.Messages) != 1 {
-		t.Fatalf("Expected 1 message, got %d", len(messages.Messages))
-	}
+	var messages *sendria.MessageList
+	waitFor(t, func() bool {
+		var err error
+		messages, err = client.ListMessages(1, 10)
+		return err == nil && len(messages.Messages) == 1
+	}, 2*time.Second, 100*time.Millisecond)
 
 	// Verify message details
 	msg1 := messages.Messages[0]
@@ -129,6 +132,7 @@ func testBasicEmailSend(t *testing.T, client *sendria.Client, smtpHost string) {
 }
 
 func testEmailWithHTML(t *testing.T, client *sendria.Client, smtpHost string) {
+	t.Helper()
 	// Clear messages
 	if err := client.DeleteAllMessages(); err != nil {
 		t.Fatalf("Failed to clear messages: %v", err)
@@ -164,17 +168,12 @@ func testEmailWithHTML(t *testing.T, client *sendria.Client, smtpHost string) {
 	}
 
 	// Wait for processing
-	time.Sleep(500 * time.Millisecond)
-
-	// Get the message
-	messages, err := client.ListMessages(1, 10)
-	if err != nil {
-		t.Fatalf("Failed to list messages: %v", err)
-	}
-
-	if len(messages.Messages) != 1 {
-		t.Fatalf("Expected 1 message, got %d", len(messages.Messages))
-	}
+	var messages *sendria.MessageList
+	waitFor(t, func() bool {
+		var err error
+		messages, err = client.ListMessages(1, 10)
+		return err == nil && len(messages.Messages) == 1
+	}, 2*time.Second, 100*time.Millisecond)
 
 	msgID := messages.Messages[0].ID
 
@@ -200,6 +199,7 @@ func testEmailWithHTML(t *testing.T, client *sendria.Client, smtpHost string) {
 }
 
 func testEmailWithMultipleRecipients(t *testing.T, client *sendria.Client, smtpHost string) {
+	t.Helper()
 	// Clear messages
 	if err := client.DeleteAllMessages(); err != nil {
 		t.Fatalf("Failed to clear messages: %v", err)
@@ -229,18 +229,13 @@ func testEmailWithMultipleRecipients(t *testing.T, client *sendria.Client, smtpH
 		t.Fatalf("Failed to send email: %v", err)
 	}
 
-	// Wait for processing
-	time.Sleep(500 * time.Millisecond)
-
-	// Verify message
-	messages, err := client.ListMessages(1, 10)
-	if err != nil {
-		t.Fatalf("Failed to list messages: %v", err)
-	}
-
-	if len(messages.Messages) != 1 {
-		t.Fatalf("Expected 1 message, got %d", len(messages.Messages))
-	}
+	// Wait for processing and verify message
+	var messages *sendria.MessageList
+	waitFor(t, func() bool {
+		var err error
+		messages, err = client.ListMessages(1, 10)
+		return err == nil && len(messages.Messages) == 1
+	}, 2*time.Second, 100*time.Millisecond)
 
 	msg1 := messages.Messages[0]
 	if len(msg1.To) != 3 {
@@ -268,6 +263,7 @@ func testEmailWithMultipleRecipients(t *testing.T, client *sendria.Client, smtpH
 }
 
 func testEmailWithAttachment(t *testing.T, client *sendria.Client, smtpHost string) {
+	t.Helper()
 	// Clear messages
 	if err := client.DeleteAllMessages(); err != nil {
 		t.Fatalf("Failed to clear messages: %v", err)
@@ -314,17 +310,12 @@ func testEmailWithAttachment(t *testing.T, client *sendria.Client, smtpHost stri
 	}
 
 	// Wait for processing
-	time.Sleep(500 * time.Millisecond)
-
-	// Get the message
-	messages, err := client.ListMessages(1, 10)
-	if err != nil {
-		t.Fatalf("Failed to list messages: %v", err)
-	}
-
-	if len(messages.Messages) != 1 {
-		t.Fatalf("Expected 1 message, got %d", len(messages.Messages))
-	}
+	var messages *sendria.MessageList
+	waitFor(t, func() bool {
+		var err error
+		messages, err = client.ListMessages(1, 10)
+		return err == nil && len(messages.Messages) == 1
+	}, 2*time.Second, 100*time.Millisecond)
 
 	// Get full message with attachments
 	fullMsg, err := client.GetMessage(messages.Messages[0].ID)
@@ -360,6 +351,7 @@ func testEmailWithAttachment(t *testing.T, client *sendria.Client, smtpHost stri
 }
 
 func testDeleteMessage(t *testing.T, client *sendria.Client, smtpHost string) {
+	t.Helper()
 	// Clear messages
 	if err := client.DeleteAllMessages(); err != nil {
 		t.Fatalf("Failed to clear messages: %v", err)
@@ -384,18 +376,13 @@ func testDeleteMessage(t *testing.T, client *sendria.Client, smtpHost string) {
 		}
 	}
 
-	// Wait for processing
-	time.Sleep(500 * time.Millisecond)
-
-	// Verify we have 2 messages
-	messages, err := client.ListMessages(1, 10)
-	if err != nil {
-		t.Fatalf("Failed to list messages: %v", err)
-	}
-
-	if len(messages.Messages) != 2 {
-		t.Fatalf("Expected 2 messages, got %d", len(messages.Messages))
-	}
+	// Wait for processing and verify we have 2 messages
+	var messages *sendria.MessageList
+	waitFor(t, func() bool {
+		var err error
+		messages, err = client.ListMessages(1, 10)
+		return err == nil && len(messages.Messages) == 2
+	}, 2*time.Second, 100*time.Millisecond)
 
 	// Delete the first message
 	firstMsgID := messages.Messages[0].ID
@@ -404,6 +391,7 @@ func testDeleteMessage(t *testing.T, client *sendria.Client, smtpHost string) {
 	}
 
 	// Verify we now have 1 message
+	var err error
 	messages, err = client.ListMessages(1, 10)
 	if err != nil {
 		t.Fatalf("Failed to list messages: %v", err)
