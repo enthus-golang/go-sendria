@@ -60,7 +60,7 @@ jobs:
 
     services:
       sendria:
-        image: msztolcman/sendria:latest
+        image: msztolcman/sendria:v2.2.2.0
         ports:
           - 1025:1025  # SMTP port
           - 1080:1080  # HTTP API port
