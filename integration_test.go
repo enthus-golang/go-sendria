@@ -1,5 +1,4 @@
 //go:build integration
-// +build integration
 
 package sendria_test
 
@@ -139,7 +138,7 @@ func testEmailWithHTML(t *testing.T, client *sendria.Client, smtpHost string) {
 	from := "html-test@example.com"
 	to := []string{"recipient@example.com"}
 	subject := "Integration Test - HTML Email"
-	
+
 	boundary := "boundary123"
 	plainBody := "This is the plain text version."
 	htmlBody := "<html><body><h1>Test Email</h1><p>This is the <b>HTML</b> version.</p></body></html>"
@@ -278,7 +277,7 @@ func testEmailWithAttachment(t *testing.T, client *sendria.Client, smtpHost stri
 	from := "attachment-test@example.com"
 	to := []string{"recipient@example.com"}
 	subject := "Integration Test - With Attachment"
-	
+
 	boundary := "boundary456"
 	body := "This email contains an attachment."
 	attachmentContent := []byte("This is the content of the test file.")
@@ -369,11 +368,11 @@ func testDeleteMessage(t *testing.T, client *sendria.Client, smtpHost string) {
 	// Send two emails
 	from := "delete-test@example.com"
 	to := []string{"recipient@example.com"}
-	
+
 	for i := 1; i <= 2; i++ {
 		subject := fmt.Sprintf("Delete Test %d", i)
 		body := fmt.Sprintf("This is test email #%d", i)
-		
+
 		msg := []byte(fmt.Sprintf("From: %s\r\n"+
 			"To: %s\r\n"+
 			"Subject: %s\r\n"+

@@ -112,7 +112,7 @@ jobs:
         env:
           SENDRIA_URL: "http://localhost:1080"
           SENDRIA_SMTP_HOST: "localhost:1025"
-        run: go test -coverprofile=cover.out ./...
+        run: go test -tags integration -coverprofile=cover.out ./...
 
       # Download master branch breakdown for coverage comparison
       - name: download artifact (master.breakdown)
