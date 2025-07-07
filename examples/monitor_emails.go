@@ -13,16 +13,19 @@ import (
 
 func main() {
 	// Create client with custom configuration if needed
-	config := sendria.Config{}
-	if baseURL := os.Getenv("SENDRIA_URL"); baseURL != "" {
-		config.BaseURL = baseURL
+	baseURL := os.Getenv("SENDRIA_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:1025"
 	}
+	
+	// Build options based on environment variables
+	var opts []sendria.Option
 	if username := os.Getenv("SENDRIA_USERNAME"); username != "" {
-		config.Username = username
-		config.Password = os.Getenv("SENDRIA_PASSWORD")
+		password := os.Getenv("SENDRIA_PASSWORD")
+		opts = append(opts, sendria.WithBasicAuth(username, password))
 	}
 
-	client := sendria.NewClient(config)
+	client := sendria.NewClient(baseURL, opts...)
 
 	// Keep track of processed messages
 	processedIDs := make(map[string]bool)

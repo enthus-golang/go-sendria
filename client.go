@@ -28,8 +28,48 @@ type Config struct {
 	Timeout  time.Duration
 }
 
-// NewClient creates a new Sendria API client
-func NewClient(config Config) *Client {
+// Option is a functional option for configuring the Client
+type Option func(*Client)
+
+// WithBasicAuth sets the username and password for basic authentication
+func WithBasicAuth(username, password string) Option {
+	return func(c *Client) {
+		c.username = username
+		c.password = password
+	}
+}
+
+// WithTimeout sets the HTTP client timeout
+func WithTimeout(timeout time.Duration) Option {
+	return func(c *Client) {
+		c.httpClient.Timeout = timeout
+	}
+}
+
+// NewClient creates a new Sendria API client with functional options
+func NewClient(baseURL string, opts ...Option) *Client {
+	if baseURL == "" {
+		baseURL = "http://localhost:1025"
+	}
+
+	client := &Client{
+		baseURL: baseURL,
+		httpClient: &http.Client{
+			Timeout: 30 * time.Second,
+		},
+	}
+
+	// Apply all options
+	for _, opt := range opts {
+		opt(client)
+	}
+
+	return client
+}
+
+// NewClientFromConfig creates a new Sendria API client from a Config struct (deprecated)
+// Deprecated: Use NewClient with functional options instead
+func NewClientFromConfig(config Config) *Client {
 	if config.BaseURL == "" {
 		config.BaseURL = "http://localhost:1025"
 	}

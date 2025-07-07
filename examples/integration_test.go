@@ -11,7 +11,7 @@ import (
 
 func main() {
 	// Create Sendria client
-	client := sendria.NewClient(sendria.Config{})
+	client := sendria.NewClient("")
 
 	// Clear all messages before starting
 	fmt.Println("Clearing all messages...")

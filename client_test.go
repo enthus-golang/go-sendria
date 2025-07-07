@@ -13,57 +13,138 @@ import (
 func TestNewClient(t *testing.T) {
 	tests := []struct {
 		name     string
-		config   Config
+		baseURL  string
+		options  []Option
 		expected struct {
-			baseURL string
-			timeout time.Duration
+			baseURL  string
+			timeout  time.Duration
+			username string
+			password string
 		}
 	}{
 		{
-			name:   "default values",
-			config: Config{},
+			name:    "default values",
+			baseURL: "",
+			options: nil,
 			expected: struct {
-				baseURL string
-				timeout time.Duration
+				baseURL  string
+				timeout  time.Duration
+				username string
+				password string
 			}{
 				baseURL: "http://localhost:1025",
 				timeout: 30 * time.Second,
 			},
 		},
 		{
-			name: "custom values",
-			config: Config{
-				BaseURL:  "http://sendria.example.com:8025",
-				Username: "user",
-				Password: "pass",
-				Timeout:  60 * time.Second,
-			},
+			name:    "custom URL only",
+			baseURL: "http://sendria.example.com:8025",
+			options: nil,
 			expected: struct {
-				baseURL string
-				timeout time.Duration
+				baseURL  string
+				timeout  time.Duration
+				username string
+				password string
 			}{
 				baseURL: "http://sendria.example.com:8025",
+				timeout: 30 * time.Second,
+			},
+		},
+		{
+			name:    "with basic auth",
+			baseURL: "http://localhost:1025",
+			options: []Option{
+				WithBasicAuth("user", "pass"),
+			},
+			expected: struct {
+				baseURL  string
+				timeout  time.Duration
+				username string
+				password string
+			}{
+				baseURL:  "http://localhost:1025",
+				timeout:  30 * time.Second,
+				username: "user",
+				password: "pass",
+			},
+		},
+		{
+			name:    "with custom timeout",
+			baseURL: "http://localhost:1025",
+			options: []Option{
+				WithTimeout(60 * time.Second),
+			},
+			expected: struct {
+				baseURL  string
+				timeout  time.Duration
+				username string
+				password string
+			}{
+				baseURL: "http://localhost:1025",
 				timeout: 60 * time.Second,
+			},
+		},
+		{
+			name:    "with all options",
+			baseURL: "http://sendria.example.com:8025",
+			options: []Option{
+				WithBasicAuth("user", "pass"),
+				WithTimeout(60 * time.Second),
+			},
+			expected: struct {
+				baseURL  string
+				timeout  time.Duration
+				username string
+				password string
+			}{
+				baseURL:  "http://sendria.example.com:8025",
+				timeout:  60 * time.Second,
+				username: "user",
+				password: "pass",
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client := NewClient(tt.config)
+			client := NewClient(tt.baseURL, tt.options...)
 			if client.baseURL != tt.expected.baseURL {
 				t.Errorf("expected baseURL %s, got %s", tt.expected.baseURL, client.baseURL)
 			}
 			if client.httpClient.Timeout != tt.expected.timeout {
 				t.Errorf("expected timeout %v, got %v", tt.expected.timeout, client.httpClient.Timeout)
 			}
-			if tt.config.Username != "" && client.username != tt.config.Username {
-				t.Errorf("expected username %s, got %s", tt.config.Username, client.username)
+			if client.username != tt.expected.username {
+				t.Errorf("expected username %s, got %s", tt.expected.username, client.username)
 			}
-			if tt.config.Password != "" && client.password != tt.config.Password {
-				t.Errorf("expected password %s, got %s", tt.config.Password, client.password)
+			if client.password != tt.expected.password {
+				t.Errorf("expected password %s, got %s", tt.expected.password, client.password)
 			}
 		})
+	}
+}
+
+func TestNewClientFromConfig(t *testing.T) {
+	config := Config{
+		BaseURL:  "http://sendria.example.com:8025",
+		Username: "user",
+		Password: "pass",
+		Timeout:  60 * time.Second,
+	}
+	
+	client := NewClientFromConfig(config)
+	
+	if client.baseURL != config.BaseURL {
+		t.Errorf("expected baseURL %s, got %s", config.BaseURL, client.baseURL)
+	}
+	if client.httpClient.Timeout != config.Timeout {
+		t.Errorf("expected timeout %v, got %v", config.Timeout, client.httpClient.Timeout)
+	}
+	if client.username != config.Username {
+		t.Errorf("expected username %s, got %s", config.Username, client.username)
+	}
+	if client.password != config.Password {
+		t.Errorf("expected password %s, got %s", config.Password, client.password)
 	}
 }
 
@@ -102,7 +183,7 @@ func TestListMessages(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(Config{BaseURL: server.URL})
+	client := NewClient(server.URL)
 	messages, err := client.ListMessages(1, 10)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -158,7 +239,7 @@ func TestGetMessage(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(Config{BaseURL: server.URL})
+	client := NewClient(server.URL)
 	message, err := client.GetMessage("123")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -191,7 +272,7 @@ func TestGetMessagePlain(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(Config{BaseURL: server.URL})
+	client := NewClient(server.URL)
 	body, err := client.GetMessagePlain("123")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -218,7 +299,7 @@ func TestGetMessageHTML(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(Config{BaseURL: server.URL})
+	client := NewClient(server.URL)
 	body, err := client.GetMessageHTML("123")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -249,7 +330,7 @@ This is the email body.`
 	}))
 	defer server.Close()
 
-	client := NewClient(Config{BaseURL: server.URL})
+	client := NewClient(server.URL)
 	source, err := client.GetMessageSource("123")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -281,7 +362,7 @@ This is the email body.`)
 	}))
 	defer server.Close()
 
-	client := NewClient(Config{BaseURL: server.URL})
+	client := NewClient(server.URL)
 	eml, err := client.GetMessageEML("123")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -308,7 +389,7 @@ func TestGetAttachment(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(Config{BaseURL: server.URL})
+	client := NewClient(server.URL)
 	attachment, err := client.GetAttachment("123", "cid123")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -332,7 +413,7 @@ func TestDeleteMessage(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(Config{BaseURL: server.URL})
+	client := NewClient(server.URL)
 	err := client.DeleteMessage("123")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -352,7 +433,7 @@ func TestDeleteAllMessages(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(Config{BaseURL: server.URL})
+	client := NewClient(server.URL)
 	err := client.DeleteAllMessages()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -377,11 +458,7 @@ func TestBasicAuth(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(Config{
-		BaseURL:  server.URL,
-		Username: "testuser",
-		Password: "testpass",
-	})
+	client := NewClient(server.URL, WithBasicAuth("testuser", "testpass"))
 	_, err := client.ListMessages(0, 0)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

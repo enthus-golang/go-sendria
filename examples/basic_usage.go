@@ -9,7 +9,7 @@ import (
 
 func main() {
 	// Create a new client with default settings
-	client := sendria.NewClient(sendria.Config{})
+	client := sendria.NewClient("")
 
 	// List all messages
 	fmt.Println("Fetching messages...")

@@ -37,7 +37,7 @@ import (
 
 func main() {
     // Create a new client with default settings (http://localhost:1025)
-    client := sendria.NewClient(sendria.Config{})
+    client := sendria.NewClient("")
     
     // List all messages
     messages, err := client.ListMessages(1, 10)
@@ -53,14 +53,34 @@ func main() {
 
 ## Configuration
 
-The client can be configured with custom settings:
+The client can be configured with custom settings using functional options:
 
 ```go
-client := sendria.NewClient(sendria.Config{
-    BaseURL:  "http://sendria.example.com:8025",  // Custom Sendria URL
-    Username: "admin",                             // Basic auth username
-    Password: "secret",                            // Basic auth password
-    Timeout:  60 * time.Second,                    // HTTP client timeout
+// Basic usage with default URL
+client := sendria.NewClient("")
+
+// Custom URL
+client := sendria.NewClient("http://sendria.example.com:8025")
+
+// With basic authentication
+client := sendria.NewClient("http://localhost:1025", 
+    sendria.WithBasicAuth("admin", "secret"))
+
+// With custom timeout
+client := sendria.NewClient("http://localhost:1025", 
+    sendria.WithTimeout(60 * time.Second))
+
+// With multiple options
+client := sendria.NewClient("http://sendria.example.com:8025",
+    sendria.WithBasicAuth("admin", "secret"),
+    sendria.WithTimeout(60 * time.Second))
+
+// Legacy configuration (deprecated)
+client := sendria.NewClientFromConfig(sendria.Config{
+    BaseURL:  "http://sendria.example.com:8025",
+    Username: "admin",
+    Password: "secret",
+    Timeout:  60 * time.Second,
 })
 ```
 
@@ -68,8 +88,11 @@ client := sendria.NewClient(sendria.Config{
 
 ### Client Methods
 
-#### NewClient(config Config) *Client
-Creates a new Sendria API client with the specified configuration.
+#### NewClient(baseURL string, opts ...Option) *Client
+Creates a new Sendria API client with the specified base URL and options. If baseURL is empty, defaults to "http://localhost:1025".
+
+#### NewClientFromConfig(config Config) *Client
+(Deprecated) Creates a new Sendria API client from a Config struct. Use NewClient with functional options instead.
 
 #### ListMessages(page, perPage int) (*MessageList, error)
 Retrieves a paginated list of messages.
