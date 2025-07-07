@@ -1,7 +1,7 @@
 # sendria
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/enthus-golang/sendria.svg)](https://pkg.go.dev/github.com/enthus-golang/sendria)
-[![CI](https://github.com/enthus-golang/sendria/actions/workflows/ci.yml/badge.svg)](https://github.com/enthus-golang/sendria/actions/workflows/ci.yml)
+[![CI](https://github.com/enthus-golang/sendria/actions/workflows/go.yml/badge.svg)](https://github.com/enthus-golang/sendria/actions/workflows/go.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/enthus-golang/sendria)](https://goreportcard.com/report/github.com/enthus-golang/sendria)
 [![codecov](https://codecov.io/gh/enthus-golang/sendria/branch/main/graph/badge.svg)](https://codecov.io/gh/enthus-golang/sendria)
 [![License](https://img.shields.io/github/license/enthus-golang/sendria)](https://github.com/enthus-golang/sendria/blob/main/LICENSE)
