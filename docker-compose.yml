@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  sendria:
+    image: msztolcman/sendria:latest
+    ports:
+      - "1025:1025"  # SMTP port
+      - "1080:1080"  # HTTP API port
+    environment:
+      - SENDRIA_DB_FLUSH_INTERVAL=10  # Flush messages to disk every 10 seconds
+      - SENDRIA_SMTP_IP=0.0.0.0       # Listen on all interfaces
+      - SENDRIA_HTTP_IP=0.0.0.0       # Listen on all interfaces
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1080/api/messages/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped

@@ -1,0 +1,61 @@
+name: Integration Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      sendria:
+        image: msztolcman/sendria:latest
+        ports:
+          - 1025:1025  # SMTP port
+          - 1080:1080  # HTTP API port
+        options: >-
+          --health-cmd "curl -f http://localhost:1080/api/messages/ || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: ./go.mod
+    
+    - name: Wait for Sendria to be ready
+      run: |
+        for i in {1..30}; do
+          if curl -f http://localhost:1080/api/messages/; then
+            echo "Sendria is ready"
+            break
+          fi
+          echo "Waiting for Sendria... ($i/30)"
+          sleep 2
+        done
+    
+    - name: Run integration tests
+      env:
+        SENDRIA_INTEGRATION_TEST: "1"
+        SENDRIA_URL: "http://localhost:1080"
+        SENDRIA_SMTP_HOST: "localhost:1025"
+      run: go test -tags=integration -v -timeout 5m ./...
+    
+    - name: Run integration tests with race detection
+      if: success()
+      env:
+        SENDRIA_INTEGRATION_TEST: "1"
+        SENDRIA_URL: "http://localhost:1080"
+        SENDRIA_SMTP_HOST: "localhost:1025"
+      run: go test -tags=integration -race -v -timeout 5m ./...

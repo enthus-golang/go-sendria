@@ -358,17 +358,65 @@ sendria --http-auth user:password
 
 ## Testing
 
-Run the test suite:
+### Unit Tests
+
+Run the unit test suite:
 
 ```bash
-go test -v ./client.go ./client_test.go ./models.go
+go test -v ./...
+
+# Run with coverage
+go test -v -cover ./...
+
+# Run with race detection
+go test -v -race ./...
 ```
 
-Run tests with coverage:
+### Integration Tests
+
+The package includes comprehensive integration tests that run against a real Sendria instance.
+
+#### Using Docker Compose (Recommended)
+
+The easiest way to run integration tests locally:
 
 ```bash
-go test -v -cover ./client.go ./client_test.go ./models.go
+# Start Sendria and run tests
+./scripts/integration-test.sh
+
+# Or manually:
+docker-compose up -d
+export SENDRIA_INTEGRATION_TEST=1
+go test -tags=integration -v ./...
+docker-compose down
 ```
+
+#### Manual Setup
+
+1. Install and run Sendria:
+```bash
+pip install sendria
+sendria --db /tmp/sendria.db
+```
+
+2. Run integration tests:
+```bash
+export SENDRIA_INTEGRATION_TEST=1
+export SENDRIA_URL=http://localhost:1080        # Optional, defaults to localhost:1080
+export SENDRIA_SMTP_HOST=localhost:1025          # Optional, defaults to localhost:1025
+go test -tags=integration -v ./...
+```
+
+#### What's Tested
+
+The integration tests verify:
+- Sending emails via SMTP and retrieving them via the API
+- Plain text and HTML email content
+- Multiple recipients
+- Email attachments
+- Message deletion (individual and bulk)
+- Pagination
+- Error handling
 
 ## Building Examples
 
