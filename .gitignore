@@ -10,6 +10,8 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+coverage.txt
+coverage.html
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
@@ -32,3 +34,11 @@ Thumbs.db
 examples/basic_usage
 examples/integration_test
 examples/monitor_emails
+
+# Environment files
+.env
+.env.local
+
+# Temporary files
+*.tmp
+*.log

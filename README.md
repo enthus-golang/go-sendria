@@ -1,5 +1,12 @@
 # sendria
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/enthus-golang/sendria.svg)](https://pkg.go.dev/github.com/enthus-golang/sendria)
+[![CI](https://github.com/enthus-golang/sendria/actions/workflows/ci.yml/badge.svg)](https://github.com/enthus-golang/sendria/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/enthus-golang/sendria)](https://goreportcard.com/report/github.com/enthus-golang/sendria)
+[![codecov](https://codecov.io/gh/enthus-golang/sendria/branch/main/graph/badge.svg)](https://codecov.io/gh/enthus-golang/sendria)
+[![License](https://img.shields.io/github/license/enthus-golang/sendria)](https://github.com/enthus-golang/sendria/blob/main/LICENSE)
+[![Release](https://img.shields.io/github/release/enthus-golang/sendria.svg)](https://github.com/enthus-golang/sendria/releases/latest)
+
 Go client library for [Sendria](https://github.com/msztolcman/sendria) REST API - A package for integration testing with the Sendria SMTP development server.
 
 ## Overview
