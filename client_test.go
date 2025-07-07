@@ -156,7 +156,9 @@ func TestListMessages(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(expectedMessages)
+		if err := json.NewEncoder(w).Encode(expectedMessages); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -212,7 +214,9 @@ func TestGetMessage(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(expectedMessage)
+		if err := json.NewEncoder(w).Encode(expectedMessage); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -245,7 +249,9 @@ func TestGetMessagePlain(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte(expectedBody))
+		if _, err := w.Write([]byte(expectedBody)); err != nil {
+			t.Errorf("failed to write response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -272,7 +278,9 @@ func TestGetMessageHTML(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(expectedBody))
+		if _, err := w.Write([]byte(expectedBody)); err != nil {
+			t.Errorf("failed to write response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -303,7 +311,9 @@ This is the email body.`
 		}
 
 		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte(expectedSource))
+		if _, err := w.Write([]byte(expectedSource)); err != nil {
+			t.Errorf("failed to write response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -335,7 +345,9 @@ This is the email body.`)
 
 		w.Header().Set("Content-Type", "message/rfc822")
 		w.Header().Set("Content-Disposition", "attachment; filename=\"message.eml\"")
-		w.Write(expectedEML)
+		if _, err := w.Write(expectedEML); err != nil {
+			t.Errorf("failed to write response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -362,7 +374,9 @@ func TestGetAttachment(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/octet-stream")
-		w.Write(expectedAttachment)
+		if _, err := w.Write(expectedAttachment); err != nil {
+			t.Errorf("failed to write response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -431,7 +445,9 @@ func TestBasicAuth(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(models.MessageList{})
+		if err := json.NewEncoder(w).Encode(models.MessageList{}); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 

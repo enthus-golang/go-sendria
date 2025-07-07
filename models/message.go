@@ -1,3 +1,4 @@
+// Package models contains the data structures used by the Sendria API.
 package models
 
 import "time"
