@@ -42,3 +42,6 @@ examples/monitor_emails
 # Temporary files
 *.tmp
 *.log
+
+# Docker volumes
+sendria-data/

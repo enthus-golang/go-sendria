@@ -10,28 +10,27 @@ import (
 	"github.com/enthus-golang/sendria/models"
 )
 
+type clientConfig struct {
+	baseURL  string
+	timeout  time.Duration
+	username string
+	password string
+}
+
 func TestNewClient(t *testing.T) {
+	t.Parallel()
+	
 	tests := []struct {
 		name     string
 		baseURL  string
 		options  []Option
-		expected struct {
-			baseURL  string
-			timeout  time.Duration
-			username string
-			password string
-		}
+		expected clientConfig
 	}{
 		{
 			name:    "default values",
 			baseURL: "",
 			options: nil,
-			expected: struct {
-				baseURL  string
-				timeout  time.Duration
-				username string
-				password string
-			}{
+			expected: clientConfig{
 				baseURL: "http://localhost:1080",
 				timeout: 30 * time.Second,
 			},
@@ -40,12 +39,7 @@ func TestNewClient(t *testing.T) {
 			name:    "custom URL only",
 			baseURL: "http://sendria.example.com:8025",
 			options: nil,
-			expected: struct {
-				baseURL  string
-				timeout  time.Duration
-				username string
-				password string
-			}{
+			expected: clientConfig{
 				baseURL: "http://sendria.example.com:8025",
 				timeout: 30 * time.Second,
 			},
@@ -56,12 +50,7 @@ func TestNewClient(t *testing.T) {
 			options: []Option{
 				WithBasicAuth("user", "pass"),
 			},
-			expected: struct {
-				baseURL  string
-				timeout  time.Duration
-				username string
-				password string
-			}{
+			expected: clientConfig{
 				baseURL:  "http://localhost:1080",
 				timeout:  30 * time.Second,
 				username: "user",
@@ -74,12 +63,7 @@ func TestNewClient(t *testing.T) {
 			options: []Option{
 				WithTimeout(60 * time.Second),
 			},
-			expected: struct {
-				baseURL  string
-				timeout  time.Duration
-				username string
-				password string
-			}{
+			expected: clientConfig{
 				baseURL: "http://localhost:1080",
 				timeout: 60 * time.Second,
 			},
@@ -91,12 +75,7 @@ func TestNewClient(t *testing.T) {
 				WithBasicAuth("user", "pass"),
 				WithTimeout(60 * time.Second),
 			},
-			expected: struct {
-				baseURL  string
-				timeout  time.Duration
-				username string
-				password string
-			}{
+			expected: clientConfig{
 				baseURL:  "http://sendria.example.com:8025",
 				timeout:  60 * time.Second,
 				username: "user",
@@ -106,7 +85,10 @@ func TestNewClient(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt // capture range variable
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			
 			client := NewClient(tt.baseURL, tt.options...)
 			if client.baseURL != tt.expected.baseURL {
 				t.Errorf("expected baseURL %s, got %s", tt.expected.baseURL, client.baseURL)
@@ -126,27 +108,8 @@ func TestNewClient(t *testing.T) {
 
 
 func TestListMessages(t *testing.T) {
-	expectedMessages := models.MessageList{
-		Messages: []models.Message{
-			{
-				ID:      "1",
-				Subject: "Test Email 1",
-				To: []models.Recipient{
-					{Name: "John Doe", Email: "john@example.com"},
-				},
-				From: []models.Recipient{
-					{Name: "Jane Doe", Email: "jane@example.com"},
-				},
-				CreatedAt: time.Now(),
-				Size:      1024,
-				Type:      "text/plain",
-			},
-		},
-		Total:   1,
-		Page:    1,
-		PerPage: 10,
-	}
-
+	t.Parallel()
+	
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/api/messages/" {
 			t.Errorf("expected path /api/messages/, got %s", r.URL.Path)
@@ -156,7 +119,27 @@ func TestListMessages(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(expectedMessages)
+		// Convert to API format
+		apiMessages := []models.APIMessage{
+			{
+				ID:                  1,
+				Subject:             "Test Email 1",
+				SenderMessage:       "jane@example.com",
+				RecipientsMessageTo: []string{"john@example.com"},
+				CreatedAt:           time.Now().Format("2006-01-02T15:04:05"),
+				Size:                1024,
+				Type:                "text/plain",
+			},
+		}
+		data, _ := json.Marshal(apiMessages)
+		resp := models.APIResponse{
+			Code: "OK",
+			Data: json.RawMessage(data),
+			Meta: &models.APIMeta{PagesTotal: 1},
+		}
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -175,34 +158,8 @@ func TestListMessages(t *testing.T) {
 }
 
 func TestGetMessage(t *testing.T) {
-	expectedMessage := models.Message{
-		ID:      "123",
-		Subject: "Test Email",
-		To: []models.Recipient{
-			{Name: "John Doe", Email: "john@example.com"},
-		},
-		From: []models.Recipient{
-			{Name: "Jane Doe", Email: "jane@example.com"},
-		},
-		CreatedAt: time.Now(),
-		Size:      2048,
-		Type:      "multipart/alternative",
-		Parts: []models.Part{
-			{
-				Type:        "text/plain",
-				ContentType: "text/plain; charset=utf-8",
-				Body:        "Hello, World!",
-				Size:        13,
-			},
-			{
-				Type:        "text/html",
-				ContentType: "text/html; charset=utf-8",
-				Body:        "<p>Hello, World!</p>",
-				Size:        20,
-			},
-		},
-	}
-
+	t.Parallel()
+	
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/api/messages/123.json" {
 			t.Errorf("expected path /api/messages/123.json, got %s", r.URL.Path)
@@ -212,7 +169,24 @@ func TestGetMessage(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(expectedMessage)
+		// Convert to API format
+		apiMessage := models.APIMessage{
+			ID:                  123,
+			Subject:             "Test Email",
+			SenderMessage:       "jane@example.com",
+			RecipientsMessageTo: []string{"john@example.com"},
+			CreatedAt:           time.Now().Format("2006-01-02T15:04:05"),
+			Size:                2048,
+			Type:                "multipart/alternative",
+		}
+		data, _ := json.Marshal(apiMessage)
+		resp := models.APIResponse{
+			Code: "OK",
+			Data: json.RawMessage(data),
+		}
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -222,103 +196,87 @@ func TestGetMessage(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if message.ID != expectedMessage.ID {
-		t.Errorf("expected message ID %s, got %s", expectedMessage.ID, message.ID)
+	if message.ID != "123" {
+		t.Errorf("expected message ID %s, got %s", "123", message.ID)
 	}
-	if message.Subject != expectedMessage.Subject {
-		t.Errorf("expected subject %s, got %s", expectedMessage.Subject, message.Subject)
-	}
-	if len(message.Parts) != 2 {
-		t.Errorf("expected 2 parts, got %d", len(message.Parts))
+	if message.Subject != "Test Email" {
+		t.Errorf("expected subject %s, got %s", "Test Email", message.Subject)
 	}
 }
 
-func TestGetMessagePlain(t *testing.T) {
-	expectedBody := "Hello, this is a plain text email!"
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/messages/123.plain" {
-			t.Errorf("expected path /api/messages/123.plain, got %s", r.URL.Path)
-		}
-		if r.Method != http.MethodGet {
-			t.Errorf("expected method GET, got %s", r.Method)
-		}
-
-		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte(expectedBody))
-	}))
-	defer server.Close()
-
-	client := NewClient(server.URL)
-	body, err := client.GetMessagePlain("123")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if body != expectedBody {
-		t.Errorf("expected body %q, got %q", expectedBody, body)
-	}
-}
-
-func TestGetMessageHTML(t *testing.T) {
-	expectedBody := "<html><body><p>Hello, this is an HTML email!</p></body></html>"
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/messages/123.html" {
-			t.Errorf("expected path /api/messages/123.html, got %s", r.URL.Path)
-		}
-		if r.Method != http.MethodGet {
-			t.Errorf("expected method GET, got %s", r.Method)
-		}
-
-		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(expectedBody))
-	}))
-	defer server.Close()
-
-	client := NewClient(server.URL)
-	body, err := client.GetMessageHTML("123")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if body != expectedBody {
-		t.Errorf("expected body %q, got %q", expectedBody, body)
-	}
-}
-
-func TestGetMessageSource(t *testing.T) {
-	expectedSource := `From: sender@example.com
+func TestGetMessageContent(t *testing.T) {
+	t.Parallel()
+	
+	tests := []struct {
+		name         string
+		method       func(*Client, string) (string, error)
+		path         string
+		contentType  string
+		expectedBody string
+	}{
+		{
+			name: "plain text",
+			method: (*Client).GetMessagePlain,
+			path: "/api/messages/123.plain",
+			contentType: "text/plain",
+			expectedBody: "Hello, this is a plain text email!",
+		},
+		{
+			name: "HTML",
+			method: (*Client).GetMessageHTML,
+			path: "/api/messages/123.html",
+			contentType: "text/html",
+			expectedBody: "<html><body><p>Hello, this is an HTML email!</p></body></html>",
+		},
+		{
+			name: "source",
+			method: (*Client).GetMessageSource,
+			path: "/api/messages/123.source",
+			contentType: "text/plain",
+			expectedBody: `From: sender@example.com
 To: recipient@example.com
 Subject: Test Email
 
-This is the email body.`
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/messages/123.source" {
-			t.Errorf("expected path /api/messages/123.source, got %s", r.URL.Path)
-		}
-		if r.Method != http.MethodGet {
-			t.Errorf("expected method GET, got %s", r.Method)
-		}
-
-		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte(expectedSource))
-	}))
-	defer server.Close()
-
-	client := NewClient(server.URL)
-	source, err := client.GetMessageSource("123")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+This is the email body.`,
+		},
 	}
 
-	if source != expectedSource {
-		t.Errorf("expected source %q, got %q", expectedSource, source)
+	for _, tt := range tests {
+		tt := tt // capture range variable
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != tt.path {
+					t.Errorf("expected path %s, got %s", tt.path, r.URL.Path)
+				}
+				if r.Method != http.MethodGet {
+					t.Errorf("expected method GET, got %s", r.Method)
+				}
+
+				w.Header().Set("Content-Type", tt.contentType)
+				if _, err := w.Write([]byte(tt.expectedBody)); err != nil {
+					t.Errorf("failed to write response: %v", err)
+				}
+			}))
+			defer server.Close()
+
+			client := NewClient(server.URL)
+			body, err := tt.method(client, "123")
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if body != tt.expectedBody {
+				t.Errorf("expected body %q, got %q", tt.expectedBody, body)
+			}
+		})
 	}
 }
 
 func TestGetMessageEML(t *testing.T) {
+	t.Parallel()
+	
 	expectedEML := []byte(`From: sender@example.com
 To: recipient@example.com
 Subject: Test Email
@@ -335,7 +293,9 @@ This is the email body.`)
 
 		w.Header().Set("Content-Type", "message/rfc822")
 		w.Header().Set("Content-Disposition", "attachment; filename=\"message.eml\"")
-		w.Write(expectedEML)
+		if _, err := w.Write(expectedEML); err != nil {
+			t.Errorf("failed to write response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -351,6 +311,8 @@ This is the email body.`)
 }
 
 func TestGetAttachment(t *testing.T) {
+	t.Parallel()
+	
 	expectedAttachment := []byte("This is the attachment content")
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -362,7 +324,9 @@ func TestGetAttachment(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/octet-stream")
-		w.Write(expectedAttachment)
+		if _, err := w.Write(expectedAttachment); err != nil {
+			t.Errorf("failed to write response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -378,6 +342,8 @@ func TestGetAttachment(t *testing.T) {
 }
 
 func TestDeleteMessage(t *testing.T) {
+	t.Parallel()
+	
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/api/messages/123" {
 			t.Errorf("expected path /api/messages/123, got %s", r.URL.Path)
@@ -398,6 +364,8 @@ func TestDeleteMessage(t *testing.T) {
 }
 
 func TestDeleteAllMessages(t *testing.T) {
+	t.Parallel()
+	
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/api/messages/" {
 			t.Errorf("expected path /api/messages/, got %s", r.URL.Path)
@@ -418,6 +386,8 @@ func TestDeleteAllMessages(t *testing.T) {
 }
 
 func TestBasicAuth(t *testing.T) {
+	t.Parallel()
+	
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, password, ok := r.BasicAuth()
 		if !ok {
@@ -431,7 +401,14 @@ func TestBasicAuth(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(models.MessageList{})
+		resp := models.APIResponse{
+			Code: "OK",
+			Data: json.RawMessage("[]"),
+			Meta: &models.APIMeta{PagesTotal: 0},
+		}
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 

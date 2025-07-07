@@ -1,3 +1,7 @@
+// Package sendria provides a Go client for interacting with the Sendria REST API.
+// Sendria is an SMTP server designed for development and testing environments
+// that catches emails and displays them in a web interface instead of sending
+// them to real recipients.
 package sendria
 
 import (
@@ -49,6 +53,11 @@ func NewClient(baseURL string, opts ...Option) *Client {
 		baseURL: baseURL,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
+			Transport: &http.Transport{
+				MaxIdleConns:        10,
+				MaxIdleConnsPerHost: 10,
+				IdleConnTimeout:     90 * time.Second,
+			},
 		},
 	}
 
@@ -103,18 +112,69 @@ func (c *Client) ListMessages(page, perPage int) (*models.MessageList, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	var messageList models.MessageList
-	if err := json.NewDecoder(resp.Body).Decode(&messageList); err != nil {
+	var apiResp models.APIResponse
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
 		return nil, fmt.Errorf("decoding response: %w", err)
 	}
 
-	return &messageList, nil
+	if apiResp.Code != "OK" {
+		return nil, fmt.Errorf("API error: %s", apiResp.Code)
+	}
+
+	// Decode the messages from the data field
+	var apiMessages []models.APIMessage
+	if err := json.Unmarshal(apiResp.Data, &apiMessages); err != nil {
+		return nil, fmt.Errorf("decoding messages: %w", err)
+	}
+
+	// Convert API messages to our Message format
+	messages := make([]models.Message, len(apiMessages))
+	for i, apiMsg := range apiMessages {
+		// Parse created_at time
+		createdAt, _ := time.Parse("2006-01-02T15:04:05", apiMsg.CreatedAt)
+		
+		// Convert recipients
+		to := make([]models.Recipient, 0)
+		for _, email := range apiMsg.RecipientsMessageTo {
+			to = append(to, models.Recipient{Email: email})
+		}
+		
+		// Convert sender
+		from := []models.Recipient{{Email: apiMsg.SenderMessage}}
+		
+		messages[i] = models.Message{
+			ID:        strconv.Itoa(apiMsg.ID),
+			Subject:   apiMsg.Subject,
+			To:        to,
+			From:      from,
+			CreatedAt: createdAt,
+			Size:      apiMsg.Size,
+			Type:      apiMsg.Type,
+			Source:    apiMsg.Source,
+		}
+	}
+
+	// Create message list
+	messageList := &models.MessageList{
+		Messages: messages,
+		Total:    len(messages),
+		Page:     page,
+		PerPage:  perPage,
+	}
+	
+	if apiResp.Meta != nil {
+		messageList.Total = apiResp.Meta.PagesTotal * perPage // Approximate
+	}
+
+	return messageList, nil
 }
 
 // GetMessage retrieves a specific message by ID
@@ -125,18 +185,53 @@ func (c *Client) GetMessage(id string) (*models.Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	var message models.Message
-	if err := json.NewDecoder(resp.Body).Decode(&message); err != nil {
+	var apiResp models.APIResponse
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
 		return nil, fmt.Errorf("decoding response: %w", err)
 	}
 
-	return &message, nil
+	if apiResp.Code != "OK" {
+		return nil, fmt.Errorf("API error: %s", apiResp.Code)
+	}
+
+	// Decode the message from the data field
+	var apiMsg models.APIMessage
+	if err := json.Unmarshal(apiResp.Data, &apiMsg); err != nil {
+		return nil, fmt.Errorf("decoding message: %w", err)
+	}
+
+	// Parse created_at time
+	createdAt, _ := time.Parse("2006-01-02T15:04:05", apiMsg.CreatedAt)
+	
+	// Convert recipients
+	to := make([]models.Recipient, 0)
+	for _, email := range apiMsg.RecipientsMessageTo {
+		to = append(to, models.Recipient{Email: email})
+	}
+	
+	// Convert sender
+	from := []models.Recipient{{Email: apiMsg.SenderMessage}}
+	
+	message := &models.Message{
+		ID:        strconv.Itoa(apiMsg.ID),
+		Subject:   apiMsg.Subject,
+		To:        to,
+		From:      from,
+		CreatedAt: createdAt,
+		Size:      apiMsg.Size,
+		Type:      apiMsg.Type,
+		Source:    apiMsg.Source,
+	}
+
+	return message, nil
 }
 
 // GetMessagePlain retrieves the plain text part of a message
@@ -147,7 +242,9 @@ func (c *Client) GetMessagePlain(id string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -169,7 +266,9 @@ func (c *Client) GetMessageHTML(id string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -191,7 +290,9 @@ func (c *Client) GetMessageSource(id string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -213,7 +314,9 @@ func (c *Client) GetMessageEML(id string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -230,7 +333,9 @@ func (c *Client) GetAttachment(messageID, cid string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -247,7 +352,12 @@ func (c *Client) DeleteMessage(id string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read and discard the response body to ensure the connection can be reused
+	_, _ = io.Copy(io.Discard, resp.Body)
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -264,7 +374,12 @@ func (c *Client) DeleteAllMessages() error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read and discard the response body to ensure the connection can be reused
+	_, _ = io.Copy(io.Discard, resp.Body)
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
