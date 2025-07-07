@@ -245,7 +245,7 @@ func (c *Client) GetMessage(id string) (*models.Message, error) {
 	if apiMsg.Source != "" {
 		parts, attachments, err := parseMIMEMessage(apiMsg.Source)
 		if err != nil {
-			return nil, fmt.Errorf("parsing MIME message: %w", err)
+			return nil, fmt.Errorf("parsing MIME message for ID %d: %w", apiMsg.ID, err)
 		}
 		message.Parts = parts
 		message.Attachments = attachments

@@ -357,6 +357,7 @@ func testEmailWithAttachment(t *testing.T, client *sendria.Client, smtpHost stri
 		"--%s\r\n"+
 		"Content-Type: text/plain; name=\"%s\"\r\n"+
 		"Content-Disposition: attachment; filename=\"%s\"\r\n"+
+		"Content-ID: <attachment123>\r\n"+
 		"Content-Transfer-Encoding: 7bit\r\n"+
 		"\r\n"+
 		"%s\r\n"+

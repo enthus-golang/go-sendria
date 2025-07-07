@@ -113,14 +113,10 @@ func parseMultipart(mr *multipart.Reader, parts *[]models.Part, attachments *[]m
 		if strings.HasPrefix(mediaType, "multipart/") {
 			nestedReader := multipart.NewReader(bytes.NewReader(partContent), params["boundary"])
 			if err := parseMultipart(nestedReader, parts, attachments); err != nil {
-				return err
+				return fmt.Errorf("parsing nested multipart: %w", err)
 			}
 			continue
 		}
-
-		// Decode content
-		encoding := p.Header.Get("Content-Transfer-Encoding")
-		decodedContent := decodeContent(partContent, encoding)
 
 		// Get content disposition
 		disposition := p.Header.Get("Content-Disposition")
@@ -143,7 +139,9 @@ func parseMultipart(mr *multipart.Reader, parts *[]models.Part, attachments *[]m
 			}
 			*attachments = append(*attachments, attachment)
 		} else {
-			// It's a message part
+			// It's a message part - decode content
+			encoding := p.Header.Get("Content-Transfer-Encoding")
+			decodedContent := decodeContent(partContent, encoding)
 			part := models.Part{
 				Type:        mediaType,
 				ContentType: contentType,
