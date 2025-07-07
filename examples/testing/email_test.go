@@ -16,6 +16,11 @@ import (
 // In a real app, these would be in your application code
 
 func SendWelcomeEmail(email string) error {
+	// Validate email address
+	if email == "" {
+		return fmt.Errorf("email address cannot be empty")
+	}
+	
 	from := "noreply@example.com"
 	to := []string{email}
 	subject := "Welcome to Our App!"
@@ -321,9 +326,10 @@ func TestEmailFlow(t *testing.T) {
 
 	resetMsg := client.AssertEmailSent(userEmail, "Password Reset Request")
 	
-	// Verify it's a different email
-	if resetMsg.ID == welcomeMsg.ID {
-		t.Error("Password reset email has same ID as welcome email")
+	// Verify reset email content
+	resetBody, _ := client.GetMessagePlain(resetMsg.ID)
+	if !strings.Contains(resetBody, "reset-abc-123") {
+		t.Error("Reset token not found in password reset email")
 	}
 
 	// 3. User makes a purchase
@@ -334,13 +340,16 @@ func TestEmailFlow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	invoiceMsg := client.FindEmail(userEmail, "")
-	if invoiceMsg == nil {
-		t.Fatal("Invoice email not found")
+	// Wait for and verify invoice email
+	invoiceMsg := client.AssertEmailSent(userEmail, "Invoice INV-001 - $99.99")
+	
+	// Verify invoice content
+	invoiceBody, _ := client.GetMessagePlain(invoiceMsg.ID)
+	if !strings.Contains(invoiceBody, "invoice INV-001") {
+		t.Error("Invoice number not found in email")
 	}
-
-	if !strings.HasPrefix(invoiceMsg.Subject, "Invoice INV-001") {
-		t.Errorf("Unexpected invoice subject: %s", invoiceMsg.Subject)
+	if !strings.Contains(invoiceBody, "$99.99") {
+		t.Error("Invoice amount not found in email")
 	}
 }
 

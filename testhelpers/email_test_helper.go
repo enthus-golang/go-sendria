@@ -41,8 +41,16 @@ func NewEmailTestClient(t *testing.T) *EmailTestClient {
 			messages, _ := client.ListMessages(1, 100)
 			t.Logf("=== Email messages at test end (%d total) ===", len(messages.Messages))
 			for i, msg := range messages.Messages {
+				fromEmail := "<empty>"
+				if len(msg.From) > 0 {
+					fromEmail = msg.From[0].Email
+				}
+				toEmail := "<empty>"
+				if len(msg.To) > 0 {
+					toEmail = msg.To[0].Email
+				}
 				t.Logf("[%d] From: %s, To: %s, Subject: %s",
-					i+1, msg.From[0].Email, msg.To[0].Email, msg.Subject)
+					i+1, fromEmail, toEmail, msg.Subject)
 			}
 		}
 		_ = client.DeleteAllMessages()
@@ -82,27 +90,37 @@ func (c *EmailTestClient) WaitForEmails(count int, timeout time.Duration) []send
 func (c *EmailTestClient) AssertEmailSent(to, subject string) *sendria.Message {
 	c.t.Helper()
 
-	messages := c.WaitForEmails(1, 2*time.Second)
-	
-	for _, msg := range messages {
-		// Check if this message matches
-		recipientMatch := false
-		for _, recipient := range msg.To {
-			if recipient.Email == to {
-				recipientMatch = true
-				break
+	// Wait for the specific email to appear, checking periodically
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		messages, err := c.ListMessages(1, 10)
+		if err != nil {
+			c.t.Fatalf("Failed to list messages: %v", err)
+		}
+		
+		for _, msg := range messages.Messages {
+			// Check if this message matches
+			recipientMatch := false
+			for _, recipient := range msg.To {
+				if recipient.Email == to {
+					recipientMatch = true
+					break
+				}
+			}
+			
+			if recipientMatch && msg.Subject == subject {
+				return &msg
 			}
 		}
 		
-		if recipientMatch && msg.Subject == subject {
-			return &msg
-		}
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	// Not found - show what we have
+	messages, _ := c.ListMessages(1, 100)
 	c.t.Errorf("No email found with recipient=%s and subject=%s", to, subject)
 	c.t.Logf("Available messages:")
-	for _, msg := range messages {
+	for _, msg := range messages.Messages {
 		c.t.Logf("  - To: %v, Subject: %s", msg.To, msg.Subject)
 	}
 	c.t.FailNow()
@@ -163,9 +181,21 @@ func (c *EmailTestClient) GetLatestEmail() *sendria.Message {
 func (c *EmailTestClient) ClearMessages() {
 	c.t.Helper()
 
-	if err := c.DeleteAllMessages(); err != nil {
-		c.t.Fatalf("Failed to clear messages: %v", err)
+	// Retry clearing messages up to 3 times to handle connection issues
+	for i := 0; i < 3; i++ {
+		if err := c.DeleteAllMessages(); err != nil {
+			if i == 2 { // Last attempt
+				c.t.Fatalf("Failed to clear messages after %d attempts: %v", i+1, err)
+			}
+			// Wait a bit before retrying
+			time.Sleep(50 * time.Millisecond)
+			continue
+		}
+		break
 	}
+	
+	// Small delay to allow connection to stabilize
+	time.Sleep(50 * time.Millisecond)
 }
 
 // CountEmails returns the current number of emails
