@@ -10,45 +10,47 @@ permissions:
 
 jobs:
   release:
-    name: Create Release
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
+    - uses: actions/checkout@v4
+
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23'
-    
-    - name: Run tests
-      run: go test -v ./...
-    
-    - name: Generate changelog
-      id: changelog
+        go-version-file: ./go.mod
+
+    - name: Get version
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+    - name: Build binaries
       run: |
-        echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
-        git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
-    
+        # Build for multiple platforms
+        GOOS=linux GOARCH=amd64 go build -o gowsdl-linux-amd64 ./cmd/gowsdl
+        GOOS=linux GOARCH=arm64 go build -o gowsdl-linux-arm64 ./cmd/gowsdl
+        GOOS=darwin GOARCH=amd64 go build -o gowsdl-darwin-amd64 ./cmd/gowsdl
+        GOOS=darwin GOARCH=arm64 go build -o gowsdl-darwin-arm64 ./cmd/gowsdl
+        GOOS=windows GOARCH=amd64 go build -o gowsdl-windows-amd64.exe ./cmd/gowsdl
+        GOOS=windows GOARCH=arm64 go build -o gowsdl-windows-arm64.exe ./cmd/gowsdl
+
+        # Create archives
+        tar czf gowsdl-${{ steps.get_version.outputs.VERSION }}-linux-amd64.tar.gz gowsdl-linux-amd64
+        tar czf gowsdl-${{ steps.get_version.outputs.VERSION }}-linux-arm64.tar.gz gowsdl-linux-arm64
+        tar czf gowsdl-${{ steps.get_version.outputs.VERSION }}-darwin-amd64.tar.gz gowsdl-darwin-amd64
+        tar czf gowsdl-${{ steps.get_version.outputs.VERSION }}-darwin-arm64.tar.gz gowsdl-darwin-arm64
+        zip gowsdl-${{ steps.get_version.outputs.VERSION }}-windows-amd64.zip gowsdl-windows-amd64.exe
+        zip gowsdl-${{ steps.get_version.outputs.VERSION }}-windows-arm64.zip gowsdl-windows-arm64.exe
+
+        # Generate checksums
+        sha256sum gowsdl-*.tar.gz gowsdl-*.zip > checksums.txt
+
     - name: Create Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        body: |
-          ## Changes in this Release
-          ${{ steps.changelog.outputs.CHANGELOG }}
-          
-          ## Installation
-          ```bash
-          go get github.com/enthus-golang/sendria@${{ github.ref }}
-          ```
+        files: |
+          gowsdl-*.tar.gz
+          gowsdl-*.zip
+          checksums.txt
+        generate_release_notes: true
         draft: false
         prerelease: false
