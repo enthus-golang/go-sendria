@@ -112,7 +112,30 @@ jobs:
         env:
           SENDRIA_URL: "http://localhost:1080"
           SENDRIA_SMTP_HOST: "localhost:1025"
-        run: go test -tags integration -coverprofile=cover.out ./...
+        run: |
+          # Run tests sequentially to prevent interference between test suites
+          # First run unit tests without integration tag
+          go test -coverprofile=unit.out ./...
+          
+          # Clear Sendria messages before integration tests
+          curl -X DELETE http://localhost:1080/api/messages/ || true
+          sleep 1
+          
+          # Run integration tests
+          go test -tags integration -coverprofile=integration.out -run TestSendriaIntegration ./...
+          
+          # Clear messages again before example tests
+          curl -X DELETE http://localhost:1080/api/messages/ || true
+          sleep 1
+          
+          # Run example tests
+          go test -coverprofile=examples.out ./examples/testing
+          
+          # Combine coverage files
+          echo "mode: set" > cover.out
+          tail -n +2 unit.out >> cover.out
+          tail -n +2 integration.out >> cover.out
+          tail -n +2 examples.out >> cover.out
 
       # Download master branch breakdown for coverage comparison
       - name: download artifact (master.breakdown)

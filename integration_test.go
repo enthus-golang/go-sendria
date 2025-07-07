@@ -36,6 +36,8 @@ func TestSendriaIntegration(t *testing.T) {
 	if err := client.DeleteAllMessages(); err != nil {
 		t.Fatalf("Failed to clear messages: %v", err)
 	}
+	// Give time for any in-flight emails to be processed
+	time.Sleep(500 * time.Millisecond)
 
 	// Ensure cleanup after all tests
 	t.Cleanup(func() {
