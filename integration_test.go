@@ -17,15 +17,10 @@ import (
 // TestSendriaIntegration runs integration tests against a real Sendria instance.
 // Run with: go test -tags=integration -v ./...
 func TestSendriaIntegration(t *testing.T) {
-	// Skip if not running integration tests
-	if os.Getenv("SENDRIA_INTEGRATION_TEST") == "" {
-		t.Skip("Skipping integration test. Set SENDRIA_INTEGRATION_TEST=1 to run.")
-	}
-
 	// Get Sendria configuration from environment
 	sendriaURL := os.Getenv("SENDRIA_URL")
 	if sendriaURL == "" {
-		sendriaURL = "http://localhost:1080"
+		t.Skip("Skipping integration test. Set SENDRIA_URL to run (e.g., SENDRIA_URL=http://localhost:1080).")
 	}
 
 	smtpHost := os.Getenv("SENDRIA_SMTP_HOST")

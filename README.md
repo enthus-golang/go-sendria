@@ -386,7 +386,7 @@ The easiest way to run integration tests locally:
 
 # Or manually:
 docker-compose up -d
-export SENDRIA_INTEGRATION_TEST=1
+export SENDRIA_URL=http://localhost:1080
 go test -tags=integration -v ./...
 docker-compose down
 ```
@@ -401,8 +401,7 @@ sendria --db /tmp/sendria.db
 
 2. Run integration tests:
 ```bash
-export SENDRIA_INTEGRATION_TEST=1
-export SENDRIA_URL=http://localhost:1080        # Optional, defaults to localhost:1080
+export SENDRIA_URL=http://localhost:1080        # Required to enable integration tests
 export SENDRIA_SMTP_HOST=localhost:1025          # Optional, defaults to localhost:1025
 go test -tags=integration -v ./...
 ```

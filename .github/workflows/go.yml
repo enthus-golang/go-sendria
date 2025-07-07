@@ -57,6 +57,13 @@ jobs:
     runs-on: ubuntu-latest
     # Skip job if PR is draft or has WIP in title
     if: github.event_name != 'pull_request' || (!github.event.pull_request.draft && !contains(github.event.pull_request.title, 'WIP'))
+
+    services:
+      sendria:
+        image: msztolcman/sendria:latest
+        ports:
+          - 1025:1025  # SMTP port
+          - 1080:1080  # HTTP API port
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -90,7 +97,21 @@ jobs:
             ${{ runner.os }}-go-test-binaries-${{ hashFiles('**/*_test.go', '**/go.mod') }}-
             ${{ runner.os }}-go-test-binaries-
 
+      - name: Wait for Sendria to be ready
+        run: |
+          for i in {1..30}; do
+          if curl -f http://localhost:1080/api/messages/; then
+           echo "Sendria is ready"
+           break
+          fi
+          echo "Waiting for Sendria... ($i/30)"
+          sleep 2
+          done
+
       - name: Test
+        env:
+          SENDRIA_URL: "http://localhost:1080"
+          SENDRIA_SMTP_HOST: "localhost:1025"
         run: go test -coverprofile=cover.out ./...
 
       # Download master branch breakdown for coverage comparison

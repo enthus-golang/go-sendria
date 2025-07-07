@@ -15,7 +15,6 @@ for i in {1..30}; do
 done
 
 echo "Running integration tests..."
-export SENDRIA_INTEGRATION_TEST=1
 export SENDRIA_URL=http://localhost:1080
 export SENDRIA_SMTP_HOST=localhost:1025
 
