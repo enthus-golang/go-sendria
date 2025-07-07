@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/enthus-golang/go-sendria/models"
+	"github.com/enthus-golang/sendria/models"
 )
 
 func TestNewClient(t *testing.T) {

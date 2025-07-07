@@ -1,4 +1,4 @@
-# go-sendria
+# sendria
 
 Go client library for [Sendria](https://github.com/msztolcman/sendria) REST API - A package for integration testing with the Sendria SMTP development server.
 
@@ -20,7 +20,7 @@ Sendria is an SMTP server designed for development and testing environments that
 ## Installation
 
 ```bash
-go get github.com/enthus-golang/go-sendria
+go get github.com/enthus-golang/sendria
 ```
 
 ## Quick Start
@@ -32,7 +32,7 @@ import (
     "fmt"
     "log"
     
-    "github.com/enthus-golang/go-sendria"
+    "github.com/enthus-golang/sendria"
 )
 
 func main() {
@@ -207,7 +207,7 @@ import (
     "testing"
     "time"
     
-    "github.com/enthus-golang/go-sendria"
+    "github.com/enthus-golang/sendria"
 )
 
 func TestEmailSending(t *testing.T) {
@@ -286,7 +286,7 @@ import (
     "log"
     "time"
     
-    "github.com/enthus-golang/go-sendria"
+    "github.com/enthus-golang/sendria"
 )
 
 func main() {

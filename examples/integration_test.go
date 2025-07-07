@@ -6,7 +6,7 @@ import (
 	"net/smtp"
 	"time"
 
-	"github.com/enthus-golang/go-sendria"
+	"github.com/enthus-golang/sendria"
 )
 
 func main() {

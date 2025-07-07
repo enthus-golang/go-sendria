@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/enthus-golang/go-sendria"
+	"github.com/enthus-golang/sendria"
 )
 
 func main() {

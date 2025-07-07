@@ -1,7 +1,7 @@
 package sendria
 
 import (
-	"github.com/enthus-golang/go-sendria/models"
+	"github.com/enthus-golang/sendria/models"
 )
 
 // Re-export models for public API

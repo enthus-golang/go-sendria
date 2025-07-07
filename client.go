@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/enthus-golang/go-sendria/models"
+	"github.com/enthus-golang/sendria/models"
 )
 
 // Client represents a Sendria API client
