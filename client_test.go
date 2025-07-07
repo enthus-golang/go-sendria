@@ -32,7 +32,7 @@ func TestNewClient(t *testing.T) {
 				username string
 				password string
 			}{
-				baseURL: "http://localhost:1025",
+				baseURL: "http://localhost:1080",
 				timeout: 30 * time.Second,
 			},
 		},
@@ -52,7 +52,7 @@ func TestNewClient(t *testing.T) {
 		},
 		{
 			name:    "with basic auth",
-			baseURL: "http://localhost:1025",
+			baseURL: "http://localhost:1080",
 			options: []Option{
 				WithBasicAuth("user", "pass"),
 			},
@@ -62,7 +62,7 @@ func TestNewClient(t *testing.T) {
 				username string
 				password string
 			}{
-				baseURL:  "http://localhost:1025",
+				baseURL:  "http://localhost:1080",
 				timeout:  30 * time.Second,
 				username: "user",
 				password: "pass",
@@ -70,7 +70,7 @@ func TestNewClient(t *testing.T) {
 		},
 		{
 			name:    "with custom timeout",
-			baseURL: "http://localhost:1025",
+			baseURL: "http://localhost:1080",
 			options: []Option{
 				WithTimeout(60 * time.Second),
 			},
@@ -80,7 +80,7 @@ func TestNewClient(t *testing.T) {
 				username string
 				password string
 			}{
-				baseURL: "http://localhost:1025",
+				baseURL: "http://localhost:1080",
 				timeout: 60 * time.Second,
 			},
 		},

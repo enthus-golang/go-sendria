@@ -42,7 +42,7 @@ func WithTimeout(timeout time.Duration) Option {
 // NewClient creates a new Sendria API client with functional options
 func NewClient(baseURL string, opts ...Option) *Client {
 	if baseURL == "" {
-		baseURL = "http://localhost:1025"
+		baseURL = "http://localhost:1080"
 	}
 
 	client := &Client{

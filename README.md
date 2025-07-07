@@ -36,7 +36,7 @@ import (
 )
 
 func main() {
-    // Create a new client with default settings (http://localhost:1025)
+    // Create a new client with default settings (http://localhost:1080)
     client := sendria.NewClient("")
     
     // List all messages
@@ -63,11 +63,11 @@ client := sendria.NewClient("")
 client := sendria.NewClient("http://sendria.example.com:8025")
 
 // With basic authentication
-client := sendria.NewClient("http://localhost:1025", 
+client := sendria.NewClient("http://localhost:1080", 
     sendria.WithBasicAuth("admin", "secret"))
 
 // With custom timeout
-client := sendria.NewClient("http://localhost:1025", 
+client := sendria.NewClient("http://localhost:1080", 
     sendria.WithTimeout(60 * time.Second))
 
 // With multiple options
@@ -82,7 +82,7 @@ client := sendria.NewClient("http://sendria.example.com:8025",
 ### Client Methods
 
 #### NewClient(baseURL string, opts ...Option) *Client
-Creates a new Sendria API client with the specified base URL and options. If baseURL is empty, defaults to "http://localhost:1025".
+Creates a new Sendria API client with the specified base URL and options. If baseURL is empty, defaults to "http://localhost:1080".
 
 #### ListMessages(page, perPage int) (*MessageList, error)
 Retrieves a paginated list of messages.

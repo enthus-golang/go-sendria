@@ -15,7 +15,7 @@ func main() {
 	// Create client with custom configuration if needed
 	baseURL := os.Getenv("SENDRIA_URL")
 	if baseURL == "" {
-		baseURL = "http://localhost:1025"
+		baseURL = "http://localhost:1080"
 	}
 	
 	// Build options based on environment variables
